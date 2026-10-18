@@ -1,0 +1,58 @@
+import time
+from datetime import datetime
+
+class BotInteractivo:
+    def __init__(self, nombre_bot="AssistantPy"):
+        self.nombre = nombre_bot
+        self.activo = True
+
+    def saludar(self):
+        print(f"🤖 [{self.nombre}]: ¡Hola! Estoy listo. Escribe 'ayuda' para ver comandos.")
+
+    def procesar_comando(self, entrada):
+        comando = entrada.strip().lower()
+
+        # ================= SECCIÓN PERSONALIZABLE =================
+        if comando in ["hola", "buenas"]:
+            return "¡Hola! ¿En qué te puedo ayudar hoy?"
+
+        elif comando in ["hora", "fecha"]:
+            ahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            return f"🕒 La fecha y hora actual es: {ahora}"
+
+        elif comando.startswith("repetir "):
+            texto = entrada[8:]  # Toma todo lo después de 'repetir '
+            return f"📢 Repitiendo: {texto}"
+
+        elif comando == "ayuda":
+            return (
+                "\n📌 **Comandos Disponibles:**\n"
+                "- hola: Saludo básico\n"
+                "- hora: Muestra la fecha y hora\n"
+                "- repetir <texto>: Repite lo que escribas\n"
+                "- salir: Detiene el bot\n"
+            )
+
+        elif comando == "salir":
+            self.activo = False
+            return "👋 Hasta luego. ¡Cerrando bot!"
+
+        else:
+            return f"❓ No entendí '{entrada}'. Escribe 'ayuda' para ver las opciones."
+        # ==========================================================
+
+    def iniciar(self):
+        self.saludar()
+        while self.activo:
+            try:
+                usuario_input = input("\n👤 Tu: ")
+                if usuario_input.strip():
+                    respuesta = self.procesar_comando(usuario_input)
+                    print(f"🤖 [{self.nombre}]: {respuesta}")
+            except (KeyboardInterrupt, EOFError):
+                print("\n👋 Bot detenido.")
+                break
+
+if __name__ == "__main__":
+    bot = BotInteractivo(nombre_bot="MiBot")
+    bot.iniciar()
