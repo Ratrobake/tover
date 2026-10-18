@@ -1,0 +1,130 @@
+import os
+import sys
+import time
+import logging
+import importlib
+from datetime import datetime
+
+# Configuración profesional de logs con formato detallado
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+
+class AdvancedBot:
+    def __init__(self, name="CoreBot", version="2.0"):
+        self.name = name
+        self.version = version
+        self.logger = logging.getLogger(self.name)
+        self.commands = {}
+        self.plugins = {}
+        self.running = False
+        self.stats = {
+            "start_time": time.time(),
+            "commands_executed": 0,
+            "errors_caught": 0
+        }
+        
+        # Registrar comandos nativos
+        self._register_native_commands()
+
+    def _register_native_commands(self):
+        """Registra los comandos internos del sistema."""
+        self.register_command("ayuda", self.cmd_help, "Muestra el listado de comandos disponibles.")
+        self.register_command("status", self.cmd_status, "Muestra estadísticas y estado actual del bot.")
+        self.register_command("sysinfo", self.cmd_sysinfo, "Muestra información del entorno de ejecución.")
+        self.register_command("salir", self.cmd_exit, "Apaga el sistema del bot de forma segura.")
+
+    def register_command(self, name, function, description="Sin descripción"):
+        """Registra un nuevo comando en el diccionario del bot."""
+        self.commands[name.lower()] = {
+            "func": function,
+            "desc": description
+        }
+        self.logger.info(f"Comando registrado exitosamente: /{name}")
+
+    # ==================== COMANDOS NATIVOS ====================
+
+    def cmd_help(self, args):
+        help_text = f"\n=== 📌 MENÚ DE AYUDA ({self.name} v{self.version}) ===\n"
+        for cmd, data in self.commands.items():
+            help_text += f"  /{cmd:<10} - {data['desc']}\n"
+        return help_text
+
+    def cmd_status(self, args):
+        uptime = int(time.time() - self.stats["start_time"])
+        return (
+            f"\n=== 📊 ESTADO DEL SISTEMA ===\n"
+            f"• Estado: 🟢 Operativo\n"
+            f"• Uptime: {uptime} segundos\n"
+            f"• Comandos ejecutados: {self.stats['commands_executed']}\n"
+            f"• Errores controlados: {self.stats['errors_caught']}\n"
+            f"• Comandos activos: {len(self.commands)}\n"
+        )
+
+    def cmd_sysinfo(self, args):
+        return (
+            f"\n=== ⚙️ INFORMACIÓN TÉCNICA ===\n"
+            f"• Python Version: {sys.version.split()[0]}\n"
+            f"• Plataforma: {sys.platform}\n"
+            f"• Directorio de trabajo: {os.getcwd()}\n"
+        )
+
+    def cmd_exit(self, args):
+        self.running = False
+        return "👋 Apagando el bot de forma segura. ¡Hasta luego!"
+
+    # ==========================================================
+
+    def process_input(self, user_input):
+        """Procesa la entrada del usuario analizando comandos o texto libre."""
+        cleaned = user_input.strip()
+        if not cleaned:
+            return None
+
+        # Si empieza con '/', se procesa como comando
+        if cleaned.startswith("/"):
+            parts = cleaned[1:].split(" ", 1)
+            cmd_name = parts[0].lower()
+            args = parts[1] if len(parts) > 1 else ""
+
+            if cmd_name in self.commands:
+                self.stats["commands_executed"] += 1
+                try:
+                    # Ejecuta la función asociada al comando pasándole los argumentos
+                    return self.commands[cmd_name]["func"](args)
+                except Exception as e:
+                    self.stats["errors_caught"] += 1
+                    self.logger.error(f"Error ejecutando /{cmd_name}: {e}")
+                    return f"❌ Ocurrió un error interno al procesar el comando '/{cmd_name}'."
+            else:
+                return f"❓ Comando desconocido: '/{cmd_name}'. Escribe /ayuda para ver las opciones."
+        
+        # Lógica para mensajes de texto libre (puedes expandirla con NLP básico o IA local)
+        return f"💡 Procesando texto libre: '{cleaned}' (Integra aquí tu lógica de procesamiento o APIs)."
+
+    def run(self):
+        """Inicia el ciclo principal del bot (Main Loop)."""
+        self.running = True
+        self.logger.info(f"Bot '{self.name}' inicializado correctamente.")
+        print(f"\n🤖 [{self.name}] ¡En línea! Escribe '/ayuda' para empezar o '/salir' para terminar.\n")
+
+        while self.running:
+            try:
+                user_input = input("👤 Usuario > ")
+                response = self.process_input(user_input)
+                if response:
+                    print(f"🤖 [{self.name}] {response}")
+            except (KeyboardInterrupt, EOFError):
+                print("\n")
+                self.logger.warning("Interrupción detectada (Ctrl+C). Cerrando...")
+                break
+            except Exception as e:
+                self.stats["errors_caught"] += 1
+                self.logger.error(f"Excepción no controlada en el bucle principal: {e}")
+
+if __name__ == "__main__":
+    # Instanciar y ejecutar el bot avanzado
+    bot = AdvancedBot(name="OmegaBot", version="2.5")
+    bot.run()
